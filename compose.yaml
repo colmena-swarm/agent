@@ -1,0 +1,16 @@
+name: colmena-agent
+services:
+  agent:
+    image: prhcatbsc/agent:latest
+    build: ./agent
+    network_mode: host
+    entrypoint: 
+      - /agentexec
+      - "${DEVICE_HARDWARE}"
+      - "${DEVICE_STRATEGY}"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+  zenoh-client:
+    image: prhcatbsc/zenoh-client:latest
+    build: ./agent-zenoh-client
+    network_mode: host
