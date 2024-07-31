@@ -1,0 +1,20 @@
+name: colmena-agent
+services:
+  
+  agent:
+    image: colmenaswarm/agent:latest
+    build: ./agent
+    entrypoint: 
+      - /agentexec
+      - "${DEVICE_HARDWARE}"
+      - "${DEVICE_STRATEGY}"
+      - "${DISCOVERY_INTERFACE}"
+      - "${DEVICE_NAME}"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+  
+  zenoh-client:
+    image: colmenaswarm/zenoh-client:latest
+    build: ./agent-zenoh-client
+    environment: 
+      ZENOH_ROUTER: "tcp/172.17.0.1:7447"

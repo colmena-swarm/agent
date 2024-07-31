@@ -1,0 +1,18 @@
+Following are change highlights associated with official releases.  Important
+bug fixes are all mentioned, but some internal enhancements are omitted here for
+brevity.  Much more detail can be found in the git revision history:
+
+[unreleased] - yyyy-mm
+Added:
+Removed:
+Bugfixes:
+
+[0.1] - 2025-01
+Added:
+    * Zenoh for metrics and services
+Removed:
+    * No longer contact a DCP for metrics and services 
+Bugfixes:
+
+[0.0.1] - 2024-11 
+First release of the COLMENA programming model

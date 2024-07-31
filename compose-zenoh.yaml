@@ -1,0 +1,26 @@
+name: zenoh
+services:
+
+  zenoh_backend_influxdb:
+    image: influxdb:1.8
+    restart: unless-stopped
+    network_mode: host
+    healthcheck:
+        test: "curl -f http://localhost:8086/health || exit 1"
+        interval: 5s
+        timeout: 10s
+        retries: 5
+
+  zenoh-router:
+    image: eclipse/zenoh:0.11.0
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./agent-zenoh-router/zenoh-docker:/root/.zenoh/lib
+      - ./agent-zenoh-router/zenohd-config.json5:/zenohd-config.json5
+    command: ['--config /zenohd-config.json5']
+    depends_on:
+      zenoh_backend_influxdb:
+          condition: service_healthy
+    stdin_open: true
+    tty: true
