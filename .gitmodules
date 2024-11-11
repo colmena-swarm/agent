@@ -1,0 +1,4 @@
+[submodule "colmena-eviden"]
+	path = colmena-eviden
+	url = https://github.com/colmena-swarm/third_party_dependencies.git
+	branch = main

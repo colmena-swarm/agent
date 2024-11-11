@@ -1,0 +1,70 @@
+{
+  "Message": "Objects found",
+  "Method": "GetSLA",
+  "Resp": "ok",
+  "Response": {
+	  "id": "ExampleApplication-SoVw5vJrwiBhBuGC5avw6Q",
+	  "name": "ExampleApplication",
+	  "state": "started",
+	  "assessment": {
+		"total_executions": 3,
+		"total_violations": 3,
+		"x": 2,
+		"x_assessment_broken_count": 3,
+		"y": 2,
+		"z": 5,
+		"level": "Critical",
+		"violated": true,
+		"first_execution": "2025-04-09T10:05:37.4275731+01:00",
+		"last_execution": "2025-04-09T10:07:37.4286218+01:00",
+		"guarantees": {
+		  "Processing": {
+			"first_execution": "2025-04-09T10:05:37.4275731+01:00",
+			"last_execution": "2025-04-09T10:07:37.4286218+01:00",
+			"last_values": {
+			  "go_memstats_frees_total": {
+				"key": "go_memstats_frees_total",
+				"action": "",
+				"namespace": "",
+				"value": 605344529,
+				"datetime": "2025-04-09T10:07:37.433+01:00"
+			  }
+			},
+			"last_violation": {
+			  "id": "",
+			  "agreement_id": "ExampleApplication-SoVw5vJrwiBhBuGC5avw6Q",
+			  "guarantee": "Processing",
+			  "action": "",
+			  "datetime": "2025-04-09T10:07:37.433+01:00",
+			  "constraint": "[go_memstats_frees_total] < 50000",
+			  "values": [
+				{
+				  "key": "go_memstats_frees_total",
+				  "action": "",
+				  "namespace": "",
+				  "value": 605344529,
+				  "datetime": "2025-04-09T10:07:37.433+01:00"
+				}
+			  ],
+			  "importanceName": "Default",
+			  "importance": -1,
+			  "appID": "ExampleApplication-SoVw5vJrwiBhBuGC5avw6Q"
+			}
+		  }
+		}
+	  },
+	  "creation": "2025-04-09T10:04:57.6243178+01:00",
+	  "expiration": "2026-04-09T10:04:57.6243178+01:00",
+	  "details": {
+		"guarantees": [
+		  {
+			"name": "Processing",
+			"constraint": "[go_memstats_frees_total] < 50000",
+			"query": "[go_memstats_frees_total#LABELS#] < 50000",
+			"scope": "",
+			"scopeTemplate": ""
+		  }
+		]
+	  }
+	}
+}

@@ -1,0 +1,23 @@
+{
+    "serviceId": "ExampleApplication",
+    "KPIs": [{
+            "roleId": "ExampleApplication-XznHi7vTQpho4SBy5mxshK",
+            "query": "[go_memstats_frees_total] < 50000",
+            "level": "Met",
+            "value": {
+                "Processing": {
+                    "go_memstats_frees_total": {
+                        "key": "go_memstats_frees_total",
+                        "action": "",
+                        "namespace": "",
+                        "value": 558677068,
+                        "datetime": "2025-04-08T10:03:27.154+01:00"
+                    }
+                }
+            },
+            "threshold": "",
+            "violations": null,
+            "total_violations": 0
+        }
+    ]
+}

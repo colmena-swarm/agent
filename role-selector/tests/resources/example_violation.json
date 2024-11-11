@@ -1,0 +1,50 @@
+{
+    "serviceId": "ExampleApplication",
+    "KPIs": [{
+            "roleId": "ExampleApplication-SoVw5vJrwiBhBuGC5avw6Q",
+            "query": "[go_memstats_frees_total#LABELS#] < 50000",
+            "level": "Critical",
+            "value": 580665224,
+            "threshold": "",
+            "violations": [{
+                    "id": "",
+                    "agreement_id": "ExampleApplication-SoVw5vJrwiBhBuGC5avw6Q",
+                    "guarantee": "Processing",
+                    "action": "",
+                    "datetime": "2025-04-09T10:07:37.433+01:00",
+                    "constraint": "[go_memstats_frees_total] < 50000",
+                    "values": [{
+                            "key": "go_memstats_frees_total",
+                            "action": "",
+                            "namespace": "",
+                            "value": 580665224,
+                            "datetime": "2025-04-09T10:07:37.433+01:00"
+                        }
+                    ],
+                    "importanceName": "Default",
+                    "importance": -1,
+                    "appID": "ExampleApplication-SoVw5vJrwiBhBuGC5avw6Q"
+                }, {
+                    "id": "",
+                    "agreement_id": "ExampleApplication-SoVw5vJrwiBhBuGC5avw6Q",
+                    "guarantee": "Processing",
+                    "action": "",
+                    "datetime": "2025-04-09T10:07:37.433+01:00",
+                    "constraint": "[go_memstats_frees_total] < 50000",
+                    "values": [{
+                            "key": "go_memstats_frees_total",
+                            "action": "",
+                            "namespace": "",
+                            "value": 605344529,
+                            "datetime": "2025-04-09T10:07:37.433+01:00"
+                        }
+                    ],
+                    "importanceName": "Default",
+                    "importance": -1,
+                    "appID": "ExampleApplication-SoVw5vJrwiBhBuGC5avw6Q"
+                }
+            ],
+            "total_violations": 3
+        }
+    ]
+}

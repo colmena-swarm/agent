@@ -1,0 +1,31 @@
+{
+    "Message": "SLA(s) created",
+    "Method": "CreateSLA",
+    "Resp": "ok",
+    "Response": [{
+            "id": "ExampleApplication-4Rw7f8BR7ihFmZ8AN53iVU",
+            "name": "ExampleApplication",
+            "state": "paused",
+            "assessment": {
+                "x": 2,
+                "y": 2,
+                "z": 5,
+                "level": "Unknown",
+                "first_execution": "0001-01-01T00:00:00Z",
+                "last_execution": "0001-01-01T00:00:00Z"
+            },
+            "creation": "2025-04-09T09:53:42.9766258+01:00",
+            "expiration": "2026-04-09T09:53:42.9766258+01:00",
+            "details": {
+                "guarantees": [{
+                        "name": "Processing",
+                        "constraint": "[go_memstats_frees_total] < 50000",
+                        "query": "[go_memstats_frees_total#LABELS#] < 50000",
+                        "scope": "company_premises/building=.",
+                        "scopeTemplate": "company_premises/building=."
+                    }
+                ]
+            }
+        }
+    ]
+}

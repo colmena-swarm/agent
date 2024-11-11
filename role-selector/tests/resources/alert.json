@@ -1,0 +1,14 @@
+{
+  "serviceId": "ExampleSensorprocessor",
+  "slaId": "ExampleSensorprocessor-Lo6iN8nsrB7xyan3FZGCuY",
+  "KPIs": [
+      {
+        "roleId": "Processing",
+        "query": "avg_over_time(examplesensorprocessor_temperature[5m]) > 1",
+        "level": "Critical",
+        "value": 0,
+        "threshold": "1",
+        "total_violations": 3
+      }
+    ]
+}

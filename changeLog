@@ -2,10 +2,10 @@ Following are change highlights associated with official releases.  Important
 bug fixes are all mentioned, but some internal enhancements are omitted here for
 brevity.  Much more detail can be found in the git revision history:
 
-[unreleased] - yyyy-mm
+[1.0.0] - 2025-09
 Added:
-Removed:
-Bugfixes:
+    * Role-selector for selecting the role to start
+    * Metrics and SLAs implemented with Prometheus
 
 [0.1.0] - 2025-01
 Added:

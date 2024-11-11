@@ -1,0 +1,5 @@
+{
+  "KPIs": [
+    {"query": "avg_over_time(examplecontextdata_processing_time[5m]) < 1", "value": 20}
+  ]
+}

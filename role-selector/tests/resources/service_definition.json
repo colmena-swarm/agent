@@ -1,0 +1,35 @@
+{
+  "id": {
+    "value": "ExampleSensorprocessor"
+  },
+  "dockerContextDefinitions": [
+    {
+      "id": "device",
+      "imageId": "device:latest"
+    }
+  ],
+  "kpis": [],
+  "dockerRoleDefinitions": [
+    {
+      "id": "Sensing",
+      "imageId": "sensing:latest",
+      "hardwareRequirements": [
+        "SENSOR"
+      ],
+      "kpis": []
+    },
+    {
+      "id": "Processing",
+      "imageId": "processing:latest",
+      "hardwareRequirements": [
+        "CPU"
+      ],
+      "kpis": [
+        {
+          "query": "avg_over_time(examplecontextdata_processing_time[5s]) < 15",
+          "scope": "company_premises/building = ."
+        }
+      ]
+    }
+  ]
+}

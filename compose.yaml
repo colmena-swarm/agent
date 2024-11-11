@@ -1,20 +1,97 @@
 name: colmena-agent
 services:
   
-  agent:
-    image: colmenaswarm/agent:latest
-    build: ./agent
+  dsm:
+    image: colmenaswarm/dsm:1.0.0
+    build: ./dsm
     entrypoint: 
-      - /agentexec
-      - "${DEVICE_HARDWARE}"
-      - "${DEVICE_STRATEGY}"
-      - "${DISCOVERY_INTERFACE}"
-      - "${DEVICE_NAME}"
+      - /dsmexec
+    environment:
+      ZENOH_URL: "http://${ZENOH_ROUTER}:8000"
+      AGENT_ID: "${AGENT_ID}"
+      PEER_DISCOVERY_INTERFACE: "${DISCOVERY_INTERFACE}"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
   
+  role-selector:
+    image: colmenaswarm/role-selector:1.0.0
+    build: ./role-selector
+    environment:
+      DSM_URL: "http://dsm:50551"
+      SLA_MANAGER_URL: "http://sla-manager:8080"
+      ZENOH_URL: "http://${ZENOH_ROUTER}:8000"
+      AGENT_ID: "${AGENT_ID}"
+      HARDWARE: "${HARDWARE}"
+      POLICY: "${POLICY}"
+      ROLE_SELECTION_INTERVAL: "${ROLE_SELECTION_INTERVAL}"
+
   zenoh-client:
-    image: colmenaswarm/zenoh-client:latest
-    build: ./agent-zenoh-client
+    image: colmenaswarm/zenoh-client:1.0.0
+    build: ./zenoh-client
     environment: 
-      ZENOH_ROUTER: "tcp/172.17.0.1:7447"
+      ZENOH_ROUTER: "tcp/${ZENOH_ROUTER}:7447"
+      DOWNSTREAM_SERVICES: "http://sla-manager:8080/api/v1/sla,http://context-awareness-manager:8080/context,http://role-selector:5555/service"
+      ZENOH_SESSION_START_DELAY: "10"
+    depends_on:
+      - dsm
+      - role-selector
+      - context-awareness-manager
+      - sla-manager
+
+  context-awareness-manager:
+    image: colmenaswarm/context-awareness-manager:1.0.0
+    build: 
+      context: ./colmena-eviden
+      dockerfile: components/context-awareness-manager/install/Dockerfile
+    restart: unless-stopped
+    environment:
+      AGENT_ID: "${AGENT_ID}"
+      DOCKERENGINE_URL: "http://containerengine:9000/deploy"
+      ZENOH_URL: "http://${ZENOH_ROUTER}:8000"
+    volumes:
+    - "/var/run/docker.sock:/var/run/docker.sock"
+
+  sla-manager:
+    image: colmenaswarm/sla-manager:1.0.0
+    build: ./colmena-eviden/components/sla-manager-svc
+    restart: always
+    environment:
+      AGENT_ID: "${AGENT_ID}"
+      COMPOSE_PROJECT_NAME: "${AGENT_ID}"
+      PROMETHEUS_ADDRESS: "http://prometheus:9090"
+      CONTEXT_ZENOH_ENDPOINT: "http://172.17.0.1:8000"
+      MONITORING_ADAPTER: "prometheus"
+      NOTIFIER_ADAPTER: "rest_endpoint"
+      NOTIFICATION_ENDPOINT: "http://role-selector:5555/alert"
+      GRPC_PORT: "8099"
+    depends_on:
+      - prometheus
+
+  metrics-etl:
+    image: colmenaswarm/metrics-etl:1.0.0
+    build:
+      context: ./colmena-eviden
+      dockerfile: components/metrics-etl/install/Dockerfile
+    restart: always
+    environment:
+      AGENT_ID: "${AGENT_ID}"
+      VERSION: 0.0.1
+    volumes:
+      - ./colmena-eviden/deploy/compose/zenoh-client/zenoh_config.json5:/app/zenoh-client
+    depends_on:
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: always
+    volumes:
+      - ./colmena-eviden/deploy/compose/prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus.yaml
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    restart: always
+
+volumes:
+  prometheus-data:

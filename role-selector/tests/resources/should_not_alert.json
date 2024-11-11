@@ -1,0 +1,14 @@
+{
+  "serviceId": "ExampleContextdata",
+  "slaId": "ExampleContextdata-Lo6iN8nsrB7xyan3FZGCuY",
+  "KPIs": [
+    {
+      "roleId": "Getter",
+      "query": "avg_over_time(examplecontextdata_processing_time[5m]) < 1",
+      "level": "Met",
+      "value": 0.5,
+      "threshold": "1",
+      "total_violations": 0
+    }
+  ]
+}

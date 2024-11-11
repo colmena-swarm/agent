@@ -527,7 +527,9 @@ gradle-app.setting
 .classpath
 
 # built client
-agent-zenoh-client/target/
+zenoh-client/target/
 
 # avoid checking in fragile integration tests
 test-integration/
+
+personal_scripts/

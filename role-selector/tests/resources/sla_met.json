@@ -1,0 +1,5 @@
+{
+  "KPIs": [
+    {"query": "avg(examplesensorprocessor/processing_time[5s]) < 15", "value": 10}
+  ]
+}

@@ -14,9 +14,10 @@ This GitHub repository contains all the files and software necessary to deploy a
 ## Repository Structure
 The repository is organized into the following directories and files:
 ### Directories
-- **agent**: Contains the code of a COLMENA Agent.
-- **agent-zenoh-client**: Rust interface service to Zenoh.
-- **agent-zenoh-router**: Contains files to start up the zenoh router as a Docker container.
+- **dsm**: Distributed Service Manager.
+- **role-selector**: Policies to decide which role to run.
+- **zenoh-client**: Rust interface service to Zenoh.
+- **zenoh-router**: Configuration for the zenoh router.
 
 ### Files
 - **.gitignore**: Specifies files and directories to be ignored by Git.
@@ -30,13 +31,21 @@ The repository is organized into the following directories and files:
 
 
 ## Getting Started
-1. Start Zenoh Router
+1. Start Zenoh Router:
 `docker compose -f compose-zenoh.yaml up --abort-on-container-exit`
 
-2. Start COLMENA agent
-`DEVICE_STRATEGY=${DEVICE_STRATEGY} DEVICE_HARDWARE=${DEVICE_HARDWARE} DISCOVERY_INTERFACE={NETWORK_INTERFACE} DEVICE_NAME={DEVICE_NAME} docker compose -f compose.yaml up --abort-on-container-exit`
-where DEVICE_STRATEGY can be EAGER or LAZY and DEVICE_HARDWARE is defined by the role.
-DISCOVERY_INTERFACE is the network interface for peer discovery, if not defined then a default interface will be picked.
+2. Start COLMENA agent:
+`HARDWARE=${HARDWARE} AGENT_ID=${AGENT_ID} POLICY=${policy} docker compose -f compose.yaml up --abort-on-container-exit`
+
+Multiple agents can be run on a single device (for testing) by setting a Docker compose project name.
+
+| Environment variables      	| Meaning     	|
+| ------------- 				| ------------- |
+| HARDWARE 						| Hardware is a basic filter that agents use for deciding which roles they are able to run |
+| AGENT_ID 						| Used to differentiate for the agents when sharing data, publishing metrics etc |
+| POLICY						| Only 'eager' and 'lazy' are supported right now |
+| ZENOH_ROUTER					| Zenoh router IP address i.e (172.17.0.1) when agent on bridge network |
+
 
 ## Contributing
 Please read our [contribution guidelines](CONTRIBUTING.md) before making a pull request.
