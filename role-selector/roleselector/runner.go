@@ -28,7 +28,7 @@ import (
 
 type RoleRunner interface {
 	Run(roleId string, serviceId string, imageId string)
-	Stop(roleId string, serviceId string, imageId string)
+	Stop(roleId string, serviceId string, imageId string, removeContainer bool)
 }
 
 const DSM_URL = "DSM_URL"
@@ -36,21 +36,10 @@ const DSM_URL = "DSM_URL"
 type DsmRoleRunner struct {
 }
 
-func (r *DsmRoleRunner) executeAction(action, roleId, serviceId, imageId string) {
+func (r *DsmRoleRunner) putRequest(action string, roleId string, serviceId string, jsonData []byte) {
 	dsmUrl := os.Getenv(DSM_URL)
 	if dsmUrl == "" {
 		log.Fatalf("%v is not set so RoleId: %v, serviceId: %v cannot be %sed. Exiting...", DSM_URL, roleId, serviceId, action)
-		return
-	}
-
-	data := map[string]string{
-		"roleId":    roleId,
-		"serviceId": serviceId,
-		"imageId":   imageId,
-	}
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		log.Printf("Error marshalling data: %v", err)
 		return
 	}
 
@@ -75,9 +64,37 @@ func (r *DsmRoleRunner) executeAction(action, roleId, serviceId, imageId string)
 }
 
 func (r *DsmRoleRunner) Run(roleId, serviceId, imageId string) {
-	r.executeAction("start", roleId, serviceId, imageId)
+	data := map[string]string{
+		"roleId":    roleId,
+		"serviceId": serviceId,
+		"imageId":   imageId,
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("Error marshalling data: %v", err)
+		return
+	}
+	r.putRequest("start", roleId, serviceId, jsonData)
 }
 
-func (r *DsmRoleRunner) Stop(roleId, serviceId, imageId string) {
-	r.executeAction("stop", roleId, serviceId, imageId)
+type StopDataCommand struct {
+	RoleId string `json:"roleId"`
+	ServiceId string `json:"serviceId"`
+	ImageId string `json:"imageId"`
+	RemoveContainer bool `json:"removeContainer"`
+}
+
+func (r *DsmRoleRunner) Stop(roleId string, serviceId string, imageId string, removeContainer bool) {
+	data := StopDataCommand{
+		RoleId:    roleId,
+		ServiceId: serviceId,
+		ImageId:   imageId,
+		RemoveContainer: removeContainer,
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("Error marshalling data: %v", err)
+		return
+	}
+	r.putRequest("stop", roleId, serviceId, jsonData)
 }

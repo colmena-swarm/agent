@@ -36,6 +36,12 @@ clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(BUILD_DIR)
 
+PLATFORM := local
+VERSION := 1.0.0
+.PHONY: docker
+docker:
+	@docker build . --platform $(PLATFORM) --tag colmenaswarm/dsm:$(VERSION)
+
 # Show help
 .PHONY: help
 help:
@@ -45,4 +51,5 @@ help:
 	@echo "  unit         - Run unit tests (excludes tests/integration)"
 	@echo "  integration  - Run integration tests only"
 	@echo "  clean        - Clean build artifacts"
+	@echo "  docker       - Build the Docker image"
 	@echo "  help         - Show this help message"

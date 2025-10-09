@@ -21,7 +21,7 @@ func Run(ctx context.Context) error {
 	colmenacontext.PublishColmenaServiceDefinition(agentId)
 
 	roleRunner := role.CommandListener{
-		ContainerEngine: docker.DockerContainerEngine{},
+		ContainerEngine: docker.DockerContainerEngine{Context: ctx},
 		AgentId:         agentId,
 		Interfc:         interfc,
 	}

@@ -60,10 +60,38 @@ const (
 	GreaterThanOrEq Operator = ">="
 )
 
+type RoleState string
+
+const (
+	/*
+		Role running as normal
+	*/
+	Running RoleState = "RUNNING"
+
+	/*
+		A role can be stopped because the role-selector decides
+		or because the
+	*/
+	Stopped RoleState = "STOPPED"
+
+	/*
+		When updating a service with a new version,
+		the role of the previous version is first stopped and then the new version is started
+	*/
+	Updating RoleState = "UPDATING"
+
+	/*
+		We have no information about the role and it's state
+	*/
+	Unknown RoleState = "UNKNOWN"
+)
+
 type Role struct {
 	Id        string
+	ServiceId string
 	ImageId   string
-	IsRunning bool
+	Kpis      []KpiDescription
+	State     RoleState
 	Resources []Resource
 }
 
@@ -78,7 +106,7 @@ type KPI struct {
 
 type Resource struct {
 	Name  string
-	Value int
+	Value float32
 }
 
 type KPIQuery struct {
@@ -97,6 +125,12 @@ type Alert struct {
 	ServiceId string     `json:"serviceId"`
 	SlaId     string     `json:"slaId"`
 	Kpis      []KPIQuery `json:"KPIs"`
+}
+
+type Decision struct {
+	RoleId      string
+	ServiceId   string
+	StartOrStop bool
 }
 
 // Alerts represents an array of Alert objects

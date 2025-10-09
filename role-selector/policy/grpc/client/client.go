@@ -20,8 +20,9 @@ package client
 import (
 	"context"
 	"fmt"
+	"time"
 
-	policy "colmena.bsc.es/role-selector/policy/grpc"
+	colmena_consensus "colmena.bsc.es/role-selector/policy/grpc/colmena_consensus"
 	"colmena.bsc.es/role-selector/types"
 
 	"google.golang.org/grpc"
@@ -30,7 +31,7 @@ import (
 
 type GeneralClient struct {
 	conn   *grpc.ClientConn
-	client policy.PolicyServiceClient
+	client colmena_consensus.SelectionServiceClient
 }
 
 func NewGeneralClient(serverAddr string) (*GeneralClient, error) {
@@ -39,7 +40,7 @@ func NewGeneralClient(serverAddr string) (*GeneralClient, error) {
 		return nil, fmt.Errorf("failed to connect to server: %v", err)
 	}
 
-	client := policy.NewPolicyServiceClient(conn)
+	client := colmena_consensus.NewSelectionServiceClient(conn)
 
 	return &GeneralClient{client: client}, nil
 }
@@ -50,68 +51,44 @@ func (g *GeneralClient) Close() {
 	}
 }
 
-func (g *GeneralClient) InitializePolicy(policyName string) (*policy.InitializeOrStopResponse, error) {
-	return g.client.Initialize(context.Background(), &policy.InitializeOrStopRequest{PolicyName: policyName})
-}
-
-func (g *GeneralClient) DecidePolicy(
-	roles []types.DockerRoleDefinition,
-	levels []types.KPI,
+func (g *GeneralClient) RequestRoles(
+	roles []*types.Role,
+	kpis []types.KPI,
 	resources []types.Resource,
-) (map[string]bool, error) {
-	var levelPtrs []*policy.IndicatorLevel
-	var resourcePtrs []*policy.Resource
-	var rolePtrs []*policy.Role
-
-	for _, l := range levels {
-		levelPtrs = append(levelPtrs, &policy.IndicatorLevel{
-			Name:           l.Query,
-			Value:          float32(l.Value),
-			Threshold:      float32(l.Threshold),
-			AssociatedRole: l.AssociatedRole,
-		})
-	}
-
-	for _, r := range resources {
-		resourcePtrs = append(resourcePtrs, &policy.Resource{
-			Name:  r.Name,
-			Value: float32(r.Value),
-		})
-	}
-
-	// Hardcoded for now
-	roleResources := []*policy.Resource{
-		{
-			Name:  "core",
-			Value: 0.3,
-		},
-		{
-			Name:  "disk",
-			Value: 0.3,
-		},
-		{
-			Name:  "ram",
-			Value: 0.3,
-		},
-	}
+) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	for _, role := range roles {
-		rolePtrs = append(rolePtrs, &policy.Role{
-			RoleName:  role.Id,
-			IsRunning: false,
-			Resources: roleResources,
-		})
+		// Convert internal Role -> proto Role
+		protoRole := &colmena_consensus.Role{
+			RoleId:    role.Id,
+			ServiceId: role.ServiceId,
+			Resources: convertResources(role.Resources),
+		}
+
+		req := &colmena_consensus.RoleRequest{
+			Role:        protoRole,
+			StartOrStop: true,
+		}
+
+		_, err := g.client.RequestRoles(ctx, req)
+		if err != nil {
+			return fmt.Errorf("failed to trigger role %s: %v", role.Id, err)
+		}
 	}
 
-	decideResponse, err := g.client.Decide(context.Background(), &policy.DecideRequest{
-		Roles:     rolePtrs,
-		Levels:    levelPtrs,
-		Resources: resourcePtrs,
-	})
-
-	return decideResponse.Decisions, err
+	return nil
 }
 
-func (g *GeneralClient) StopPolicy(policyName string) (*policy.InitializeOrStopResponse, error) {
-	return g.client.Stop(context.Background(), &policy.InitializeOrStopRequest{PolicyName: policyName})
+// Helper to convert internal resources to proto resources
+func convertResources(resources []types.Resource) []*colmena_consensus.Resource {
+	protoResources := make([]*colmena_consensus.Resource, len(resources))
+	for i, r := range resources {
+		protoResources[i] = &colmena_consensus.Resource{
+			Name:  r.Name,
+			Value: r.Value,
+		}
+	}
+	return protoResources
 }

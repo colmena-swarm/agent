@@ -93,5 +93,14 @@ services:
     image: prom/node-exporter:v1.9.1
     restart: always
 
+  compss:
+    image: colmenaswarm/compss:1.0.0
+    working_dir: /agent
+    command: compss_agent_start --socket --debug --hostname=abc --rest_port=46101
+    volumes:
+      - /tmp:/tmp
+      - /var/run/docker.sock:/var/run/docker.sock
+    network_mode: host
+
 volumes:
   prometheus-data:

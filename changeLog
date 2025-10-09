@@ -2,6 +2,11 @@ Following are change highlights associated with official releases.  Important
 bug fixes are all mentioned, but some internal enhancements are omitted here for
 brevity.  Much more detail can be found in the git revision history:
 
+[1.1.0] - 2025-12
+Added:
+    * Consensus-based policy
+    * COMPSs agent
+
 [1.0.0] - 2025-09
 Added:
     * Role-selector for selecting the role to start

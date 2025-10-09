@@ -37,35 +37,50 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
+
 	log.Printf("HTTP server listening on port: %v", listener.Addr().(*net.TCPAddr).Port)
 
 	sdChan := make(chan types.ServiceDescription)
 	servicedescription.Endpoint(sdChan, mux)
 	alertsChan := make(chan types.Alert)
 	sla.AlertEndpoint(alertsChan, mux)
+	stoppedRoles := make(chan roleselector.StoppedEvent)
+	roleselector.MonitorStopped(stoppedRoles, mux)
 	go http.Serve(listener, mux)
 
-	policy := getPolicy()
-	log.Printf("Using policy: %v", policy.Name())
 	selector := &roleselector.RoleSelector{
 		ServiceDescriptionChan: sdChan,
 		AlertsChan:             alertsChan,
 		Hardware:               os.Getenv("HARDWARE"),
-		Policy:                 policy,
 		RoleRunner:             &roleselector.DsmRoleRunner{},
 		KpiRetriever:           sla.KpiRetrieverClient{},
 	}
-	selector.Run()
+
+	policy := getPolicy(selector)
+	log.Printf("Using policy: %v", policy.Name())
+	selector.SetPolicy(policy)
+
+	selector.Run(stoppedRoles)
 
 	log.Println("Role selector stopping...")
 	close(alertsChan)
 	close(sdChan)
+	policy.Stop()
 }
 
-func getPolicy() policy.Policy {
+func getPolicy(rs *roleselector.RoleSelector) policy.Policy {
 	policyName := os.Getenv("POLICY")
 	if policyName == "lazy" {
 		return &policy.LazyPolicy{}
+	} else if policyName == "consensus" {
+		endpoint := os.Getenv("ENDPOINT")
+		p, err := policy.NewConsensusPolicy(endpoint, rs.TriggerDecision)
+		if err != nil {
+			log.Printf("failed to create consensus policy (%v), falling back to LazyPolicy", err)
+			return &policy.LazyPolicy{}
+		}
+		return p
 	}
 	return &policy.EagerPolicy{}
 }

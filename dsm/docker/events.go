@@ -17,35 +17,40 @@
 package docker
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/client"
 )
 
-func (DockerContainerEngine) Subscribe(stopped chan string) {
-	ctx := context.Background()
+func (DockerContainerEngine) Subscribe(ctx context.Context) {
 	cli, cxnErr := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if cxnErr != nil {
 		panic(cxnErr)
 	}
 	defer cli.Close()
 
-	for {
-		events, err := cli.Events(ctx, types.EventsOptions{})
-		process(events, err, stopped)
-	}
+	events, err := cli.Events(ctx, types.EventsOptions{})
+	process(ctx, events, err)
 }
 
-func process(events <-chan events.Message, err <-chan error, stopped chan string) {
+func process(ctx context.Context, events <-chan events.Message, err <-chan error) {
+	log.Printf("Processing docker events")
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case event := <-events:
 			if event.Action == "die" {
-				stopped <- event.ID
+				roleStopped(event)
 			}
 		case each := <-err:
 			//once the stream has been completely read an io.EOF error will be sent over the error channel
@@ -55,4 +60,56 @@ func process(events <-chan events.Message, err <-chan error, stopped chan string
 			return
 		}
 	}
+}
+
+type StoppedEvent struct {
+	RoleId		string `json:"roleId"`
+	ServiceId	string `json:"serviceId"`
+	ImageId		string `json:"imageId"`
+}
+
+func roleStopped(event events.Message) {
+	if event.Actor.Attributes["es.bsc.colmena.roleId"] == "" ||
+		event.Actor.Attributes["es.bsc.colmena.serviceId"] == "" {
+		return
+	}
+
+	// send the stopped event to the role selector
+	roleSelectorUrl := os.Getenv("ROLE_SELECTOR_URL")
+	if roleSelectorUrl == "" {
+		roleSelectorUrl = "http://role-selector:5555"
+	}
+
+	url := fmt.Sprintf("%s/%s", roleSelectorUrl, "stopped")
+
+	stoppedEvent := StoppedEvent{
+		RoleId: event.Actor.Attributes["es.bsc.colmena.roleId"],
+		ServiceId: event.Actor.Attributes["es.bsc.colmena.serviceId"],
+		ImageId: event.Actor.Attributes["image"],
+	}
+
+	jsonData, err := json.Marshal(stoppedEvent)
+	if err != nil {
+		log.Printf("Error marshalling data: %v", err)
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Printf("Error creating request: %v", err)
+		return
+	}
+
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error sending request: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("request failed with status code: %d", resp.StatusCode)
+		return
+	}
+	log.Printf("Stopped event sent to role selector")
 }

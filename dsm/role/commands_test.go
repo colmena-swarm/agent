@@ -18,6 +18,7 @@ package role
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -39,6 +40,7 @@ type MockContainerEngine struct {
 }
 
 type RunContainerCall struct {
+	ServiceId string
 	RoleId  string
 	ImageId string
 	AgentId string
@@ -47,6 +49,7 @@ type RunContainerCall struct {
 
 type StopContainerCall struct {
 	ContainerId string
+	RemoveContainer bool
 }
 
 func NewMockContainerEngine() *MockContainerEngine {
@@ -57,11 +60,12 @@ func NewMockContainerEngine() *MockContainerEngine {
 	}
 }
 
-func (m *MockContainerEngine) RunContainer(roleId string, imageId string, agentId string, interfc string) (string, error) {
+func (m *MockContainerEngine) RunContainer(serviceId string, roleId string, imageId string, agentId string, interfc string) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	m.runContainerCalls = append(m.runContainerCalls, RunContainerCall{
+		ServiceId: serviceId,
 		RoleId:  roleId,
 		ImageId: imageId,
 		AgentId: agentId,
@@ -76,12 +80,13 @@ func (m *MockContainerEngine) RunContainer(roleId string, imageId string, agentI
 	return fmt.Sprintf("container-%s", roleId), nil
 }
 
-func (m *MockContainerEngine) StopContainer(containerId string) error {
+func (m *MockContainerEngine) StopContainer(containerId string, imageId string, removeContainer bool) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	m.stopContainerCalls = append(m.stopContainerCalls, StopContainerCall{
 		ContainerId: containerId,
+		RemoveContainer: removeContainer,
 	})
 
 	if m.stopContainerError != nil {
@@ -99,7 +104,7 @@ func (m *MockContainerEngine) StopContainer(containerId string) error {
 	return nil
 }
 
-func (m *MockContainerEngine) Subscribe(stopped chan string) {
+func (m *MockContainerEngine) Subscribe(ctx context.Context) {
 	// Mock implementation - not used in these tests
 }
 
@@ -162,7 +167,7 @@ func TestStartEndpoint_Success(t *testing.T) {
 	defer server.Close()
 
 	// Test data
-	roleCmd := RoleCommand{
+	roleCmd := StartRoleCommand{
 		ServiceId: "service-123",
 		RoleId:    "role-456",
 		ImageId:   "test-image:latest",
@@ -257,7 +262,7 @@ func TestStopEndpoint_Success(t *testing.T) {
 	defer server.Close()
 
 	// Test data
-	roleCmd := RoleCommand{
+	roleCmd := StopRoleCommand{
 		ServiceId: "service-123",
 		RoleId:    "role-456",
 		ImageId:   "test-image:latest",
@@ -338,7 +343,7 @@ func TestMultipleRequests(t *testing.T) {
 	defer server.Close()
 
 	// Test multiple start requests
-	roleCommands := []RoleCommand{
+	roleCommands := []StartRoleCommand{
 		{ServiceId: "service-1", RoleId: "role-1", ImageId: "image-1"},
 		{ServiceId: "service-2", RoleId: "role-2", ImageId: "image-2"},
 		{ServiceId: "service-3", RoleId: "role-3", ImageId: "image-3"},
@@ -397,7 +402,7 @@ func TestConcurrentRequests(t *testing.T) {
 		go func(i int) {
 			defer func() { done <- true }()
 
-			roleCmd := RoleCommand{
+			roleCmd := StartRoleCommand{
 				ServiceId: fmt.Sprintf("service-%d", i),
 				RoleId:    fmt.Sprintf("role-%d", i),
 				ImageId:   fmt.Sprintf("image-%d", i),
@@ -441,31 +446,31 @@ func TestParseRoleCommand(t *testing.T) {
 	tests := []struct {
 		name     string
 		jsonData string
-		expected RoleCommand
+		expected StartRoleCommand
 		hasError bool
 	}{
 		{
 			name:     "Valid JSON",
 			jsonData: `{"serviceId": "service-123", "roleId": "role-456", "imageId": "image-789"}`,
-			expected: RoleCommand{ServiceId: "service-123", RoleId: "role-456", ImageId: "image-789"},
+			expected: StartRoleCommand{ServiceId: "service-123", RoleId: "role-456", ImageId: "image-789"},
 			hasError: false,
 		},
 		{
 			name:     "Empty JSON",
 			jsonData: `{}`,
-			expected: RoleCommand{},
+			expected: StartRoleCommand{},
 			hasError: false,
 		},
 		{
 			name:     "Invalid JSON",
 			jsonData: `{"serviceId": "service-123", "roleId": "role-456"`,
-			expected: RoleCommand{},
+			expected: StartRoleCommand{},
 			hasError: true,
 		},
 		{
 			name:     "Missing fields",
 			jsonData: `{"serviceId": "service-123"}`,
-			expected: RoleCommand{ServiceId: "service-123"},
+			expected: StartRoleCommand{ServiceId: "service-123"},
 			hasError: false,
 		},
 	}
@@ -475,7 +480,7 @@ func TestParseRoleCommand(t *testing.T) {
 			req := httptest.NewRequest("POST", "/test", bytes.NewBufferString(tt.jsonData))
 			req.Header.Set("Content-Type", "application/json")
 
-			result, err := parseRoleCommand(req)
+			result, err := parseStartRoleCommand(req)
 
 			if tt.hasError {
 				if err == nil {

@@ -16,8 +16,10 @@
 #
 
 DOCKER_COMPOSE_FILE="../compose-zenoh.yaml"
+PLATFORM := local
+VERSION := 1.0.0
 
-.PHONY: test integration-test clean zenoh-up zenoh-down
+.PHONY: test integration-test clean zenoh-up zenoh-down docker
 
 # Run all tests
 test:
@@ -41,6 +43,9 @@ zenoh-up:
 # Shut down Docker dependencies
 zenoh-down:
 	docker compose -f $(DOCKER_COMPOSE_FILE) down
+
+docker:
+	@docker build . --platform $(PLATFORM) --tag colmenaswarm/zenoh-client:$(VERSION)
 
 # Clean up build artifacts
 clean:

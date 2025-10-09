@@ -25,10 +25,17 @@ import (
 	"colmena.bsc.es/agent/docker"
 )
 
-type RoleCommand struct {
+type StartRoleCommand struct {
 	ServiceId string `json:"serviceId"`
 	RoleId    string `json:"roleId"`
 	ImageId   string `json:"imageId"`
+}
+
+type StopRoleCommand struct {
+	ServiceId string `json:"serviceId"`
+	RoleId    string `json:"roleId"`
+	ImageId   string `json:"imageId"`
+	RemoveContainer bool `json:"removeContainer"`
 }
 
 type CommandListener struct {
@@ -45,36 +52,45 @@ func (c CommandListener) Endpoints() http.Handler {
 	})
 
 	mux.HandleFunc("/start", func(w http.ResponseWriter, r *http.Request) {
-		roleCmd, err := parseRoleCommand(r)
+		roleCmd, err := parseStartRoleCommand(r)
 		if err != nil {
 			log.Printf("Could not parse body. %s", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		log.Printf("Received command to start role. serviceId: %v, roleId: %v, imageId: %v", roleCmd.ServiceId, roleCmd.RoleId, roleCmd.ImageId)
-		go c.ContainerEngine.RunContainer(roleCmd.RoleId, roleCmd.ImageId, c.AgentId, c.Interfc)
+		go c.ContainerEngine.RunContainer(roleCmd.ServiceId, roleCmd.RoleId, roleCmd.ImageId, c.AgentId, c.Interfc)
 		w.WriteHeader(http.StatusOK)
 	})
 
 	mux.HandleFunc("/stop", func(w http.ResponseWriter, r *http.Request) {
-		roleCmd, err := parseRoleCommand(r)
+		roleCmd, err := parseStopRoleCommand(r)
 		if err != nil {
 			log.Printf("Could not parse body. %s", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		log.Printf("Received command to stop role. serviceId: %v, roleId: %v, imageId: %v", roleCmd.ServiceId, roleCmd.RoleId, roleCmd.ImageId)
-		go c.ContainerEngine.StopContainer(roleCmd.RoleId)
+		
+		go c.ContainerEngine.StopContainer(roleCmd.RoleId, roleCmd.ImageId, roleCmd.RemoveContainer)
 		w.WriteHeader(http.StatusOK)
 	})
 
 	return mux
 }
 
-func parseRoleCommand(r *http.Request) (RoleCommand, error) {
-	var roleCmd RoleCommand
+func parseStopRoleCommand(r *http.Request) (StopRoleCommand, error) {
+	var roleCmd StopRoleCommand
 	if err := json.NewDecoder(r.Body).Decode(&roleCmd); err != nil {
-		return RoleCommand{}, err
+		return StopRoleCommand{}, err
+	}
+	return roleCmd, nil
+}
+
+func parseStartRoleCommand(r *http.Request) (StartRoleCommand, error) {
+	var roleCmd StartRoleCommand
+	if err := json.NewDecoder(r.Body).Decode(&roleCmd); err != nil {
+		return StartRoleCommand{}, err
 	}
 	return roleCmd, nil
 }
